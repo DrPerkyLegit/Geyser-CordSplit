@@ -18,6 +18,7 @@ public class ServerboundListener implements EventListener {
 
     }
 
+    //concept for the idea atm
     @EventHandler
     public void onJavaPacketEvent(JavaPacketEvent event) {
 
