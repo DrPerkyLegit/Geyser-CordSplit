@@ -10,12 +10,8 @@ import org.geyser.extension.cordslice.Random.SliceTracker;
 import org.geysermc.geyser.api.connection.GeyserConnection;
 import org.geysermc.geyser.session.GeyserSession;
 import org.geysermc.mcprotocollib.network.packet.Packet;
-import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundPlayerChatPacket;
-import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.ServerboundChatPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.ServerboundMovePlayerPosPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.ServerboundMovePlayerPosRotPacket;
-
-import javax.swing.text.Position;
 
 public class ServerboundListener implements EventListener {
     public ServerboundListener(CordSliceExtension extension) {

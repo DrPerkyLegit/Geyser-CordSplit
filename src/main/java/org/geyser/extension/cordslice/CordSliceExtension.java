@@ -2,22 +2,19 @@ package org.geyser.extension.cordslice;
 
 import io.netty.channel.*;
 import io.netty.util.AttributeKey;
-import org.cloudburstmc.protocol.bedrock.BedrockServerSession;
 import org.geyser.extension.cordslice.Events.EventManager;
+import org.geyser.extension.cordslice.Events.JavaPacketEvent;
 import org.geyser.extension.cordslice.Listeners.ServerboundListener;
 import org.geyser.extension.cordslice.Listeners.ClientboundListener;
-import org.geyser.extension.cordslice.Random.PacketHandlers;
 import org.geyser.extension.cordslice.Random.SliceTracker;
 import org.geysermc.event.subscribe.Subscribe;
 import org.geysermc.geyser.api.event.bedrock.SessionDisconnectEvent;
 import org.geysermc.geyser.api.event.bedrock.SessionJoinEvent;
-import org.geysermc.geyser.api.event.lifecycle.GeyserLoadResourcePacksEvent;
 import org.geysermc.geyser.api.event.lifecycle.GeyserPostInitializeEvent;
 import org.geysermc.geyser.api.extension.Extension;
 import org.geysermc.geyser.api.extension.ExtensionLogger;
 import org.geysermc.geyser.session.GeyserSession;
-
-import static net.bytebuddy.matcher.ElementMatchers.takesArguments;
+import org.geysermc.mcprotocollib.network.packet.Packet;
 
 /**
  * The main class of your extension - must implement extension, and be in the extension.yml file.
@@ -49,7 +46,25 @@ public class CordSliceExtension implements Extension {
 
 
         if (channel.pipeline().get("CordSlide-PacketHandler") == null) {
-            channel.pipeline().addBefore("manager", "CordSlide-PacketHandler", PacketHandlers.createJavaHandler());
+            channel.pipeline().addBefore("manager", "CordSlide-PacketHandler", new ChannelDuplexHandler() {
+                @Override
+                public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+                    if (msg instanceof Packet packet) {
+                        GeyserSession session = ctx.channel().attr(CordSliceExtension.SESSION_KEY).get();
+
+                        JavaPacketEvent packetEvent = new JavaPacketEvent(packet, session);
+                        EventManager.call(packetEvent);
+
+                        if (packetEvent.isCanceled()) return;
+                    }
+                    super.channelRead(ctx, msg);
+                }
+
+                @Override
+                public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+                    super.write(ctx, msg, promise);
+                }
+            });
         }
 
 
