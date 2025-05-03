@@ -1,10 +1,12 @@
 plugins {
     java
+    id("com.github.johnrengelman.shadow") version "8.1.1" // add shadow plugin
 }
 
 val id = project.property("id") as String
 val extensionName = project.property("name") as String
 val geyserApiVersion = "2.6.1"
+val adventureVersion = "4.20.0"
 
 repositories {
     // Repo for the Geyser API artifact
@@ -19,6 +21,14 @@ dependencies {
     compileOnly("org.geysermc.geyser:api:$geyserApiVersion-SNAPSHOT")
 
     // Include other dependencies here - e.g. configuration libraries.
+    compileOnly("org.geysermc.geyser:core:$geyserApiVersion-SNAPSHOT")
+
+    implementation("org.geysermc.mcprotocollib:protocol:1.21.5-SNAPSHOT")
+
+    implementation(platform("net.kyori:adventure-bom:$adventureVersion"))
+    implementation("net.kyori:adventure-api:$adventureVersion")
+    implementation("net.kyori:adventure-text-minimessage:$adventureVersion")
+    implementation("net.kyori:adventure-text-serializer-plain:$adventureVersion")
 }
 
 // Java currently requires Java 17 or higher, so extensions should also target it
@@ -53,4 +63,14 @@ tasks {
             )
         }
     }
+}
+
+
+tasks.shadowJar {
+    mergeServiceFiles()
+    //relocate("net.kyori", "org.geyser.extension.shaded.kyori")
+}
+
+tasks.build {
+    dependsOn(tasks.shadowJar)
 }

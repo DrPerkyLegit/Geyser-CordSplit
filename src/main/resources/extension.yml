@@ -1,6 +1,6 @@
 id: $id
 name: $name
-main: org.geyser.extension.exampleid.ExampleExtension
+main: org.geyser.extension.cordslice.CordSliceExtension
 api: $api
 version: $version
 authors: [$author]
