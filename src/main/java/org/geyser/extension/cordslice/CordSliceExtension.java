@@ -44,7 +44,7 @@ public class CordSliceExtension implements Extension {
         Channel channel = ((GeyserSession) event.connection()).getDownstream().getSession().getChannel();
         channel.attr(SESSION_KEY).set((GeyserSession) event.connection());
 
-
+        //all channels share the same pipeline (i think) so dont create more than 1 netty handler, im new to using direct netty for stuff
         if (channel.pipeline().get("CordSlide-PacketHandler") == null) {
             channel.pipeline().addBefore("manager", "CordSlide-PacketHandler", new ChannelDuplexHandler() {
                 @Override
@@ -60,6 +60,7 @@ public class CordSliceExtension implements Extension {
                     super.channelRead(ctx, msg);
                 }
 
+                //clientbound packets are here, need to add event lister setup to it like the "channelRead" function
                 @Override
                 public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
                     super.write(ctx, msg, promise);
