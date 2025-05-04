@@ -60,9 +60,17 @@ public class CordSliceExtension implements Extension {
                     super.channelRead(ctx, msg);
                 }
 
-                //clientbound packets are here, need to add event lister setup to it like the "channelRead" function
                 @Override
                 public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+                    if (msg instanceof Packet packet) {
+                        GeyserSession session = ctx.channel().attr(CordSliceExtension.SESSION_KEY).get();
+
+                        JavaPacketEvent packetEvent = new JavaPacketEvent(packet, session);
+                        EventManager.call(packetEvent);
+
+                        if (packetEvent.isCanceled()) return;
+                    }
+
                     super.write(ctx, msg, promise);
                 }
             });
