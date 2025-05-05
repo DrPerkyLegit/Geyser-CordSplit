@@ -2,11 +2,12 @@ package org.geyser.extension.cordslice;
 
 import io.netty.channel.*;
 import io.netty.util.AttributeKey;
+import org.geyser.extension.cordslice.Events.Event;
 import org.geyser.extension.cordslice.Events.EventManager;
-import org.geyser.extension.cordslice.Events.JavaPacketEvent;
 import org.geyser.extension.cordslice.Listeners.ServerboundListener;
 import org.geyser.extension.cordslice.Listeners.ClientboundListener;
-import org.geyser.extension.cordslice.Random.SliceTracker;
+import org.geyser.extension.cordslice.Random.PositionSlicer;
+import org.geyser.extension.cordslice.Random.PositionTracker;
 import org.geysermc.event.subscribe.Subscribe;
 import org.geysermc.geyser.api.event.bedrock.SessionDisconnectEvent;
 import org.geysermc.geyser.api.event.bedrock.SessionJoinEvent;
@@ -30,19 +31,23 @@ public class CordSliceExtension implements Extension {
         staticLogger = this.logger();
         staticLogger.info("Loading %s...".formatted(this.description().name()));
 
+        EventManager.setDebugMode(true);
         EventManager.register(new ClientboundListener(this));
         EventManager.register(new ServerboundListener(this));
     }
 
     @Subscribe
     public void onPlayerDisconnect(SessionDisconnectEvent event) {
-        SliceTracker.remove(event.connection());
+        PositionTracker.remove(event.connection());
     }
 
     @Subscribe
-    public void onPlayerJoin(SessionJoinEvent event) {//we dont need to handle packets before the join state
+    public void onPlayerJoin(SessionJoinEvent event) {
         Channel channel = ((GeyserSession) event.connection()).getDownstream().getSession().getChannel();
         channel.attr(SESSION_KEY).set((GeyserSession) event.connection());
+
+        PositionTracker.updateSlice(event.connection(), PositionTracker.SliceType.SLICE, PositionSlicer.getSlice(((GeyserSession) event.connection()).getPlayerEntity().getPosition().toDouble()).toDouble());
+        PositionTracker.updateSlice(event.connection(), PositionTracker.SliceType.POSITION, ((GeyserSession) event.connection()).getPlayerEntity().getPosition().toDouble());
 
         //all channels share the same pipeline (i think) so dont create more than 1 netty handler, im new to using direct netty for stuff
         if (channel.pipeline().get("CordSlide-PacketHandler") == null) {
@@ -52,8 +57,8 @@ public class CordSliceExtension implements Extension {
                     if (msg instanceof Packet packet) {
                         GeyserSession session = ctx.channel().attr(CordSliceExtension.SESSION_KEY).get();
 
-                        JavaPacketEvent packetEvent = new JavaPacketEvent(packet, session);
-                        EventManager.call(packetEvent);
+                        Event packetEvent = new Event(packet, session);
+                        packetEvent.call();
 
                         if (packetEvent.isCanceled()) return;
                     }
@@ -63,12 +68,16 @@ public class CordSliceExtension implements Extension {
                 @Override
                 public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
                     if (msg instanceof Packet packet) {
-                        GeyserSession session = ctx.channel().attr(CordSliceExtension.SESSION_KEY).get();
+                        if (ServerboundListener.outboundPackets.contains(packet)) {
+                            ServerboundListener.outboundPackets.remove(packet);
+                        } else {
+                            GeyserSession session = ctx.channel().attr(CordSliceExtension.SESSION_KEY).get();
 
-                        JavaPacketEvent packetEvent = new JavaPacketEvent(packet, session);
-                        EventManager.call(packetEvent);
+                            Event packetEvent = new Event(packet, session);
+                            packetEvent.call();
 
-                        if (packetEvent.isCanceled()) return;
+                            if (packetEvent.isCanceled()) return;
+                        }
                     }
 
                     super.write(ctx, msg, promise);
