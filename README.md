@@ -1,5 +1,5 @@
 # Geyser-CordSlice
-### Progress: Not Functional
+### Progress: Functional, Very Unfinished
 A Geyser Extension  with work arounds to prevent floating point errors with the world
 
 

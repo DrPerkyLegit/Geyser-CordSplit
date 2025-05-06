@@ -4,6 +4,8 @@ import org.cloudburstmc.math.vector.Vector3d;
 import org.cloudburstmc.math.vector.Vector3f;
 import org.cloudburstmc.math.vector.Vector3i;
 
+//big issue with negative numbers and slice scaling for some reason
+
 public class PositionSlicer {
     protected static final double SLICE_SIZE = 16384.0;
 
@@ -31,20 +33,45 @@ public class PositionSlicer {
         }
     }
 
+    private static class NegativeResults {
+        double value;
+        boolean wasNegative;
+
+        NegativeResults(double value, boolean wasNegative) {
+            this.value = value;
+            this.wasNegative = wasNegative;
+        }
+    }
+    private static NegativeResults handleNegative(double value) {
+        boolean isNegative = value < 0;
+        double finalValue = value;
+        if (isNegative) finalValue *= -1;
+
+        return new NegativeResults(finalValue, isNegative);
+    }
+
     public static Vector3i getSlice(Vector3d pos) {
-        int sliceX = (int) Math.floor(pos.getX() / SLICE_SIZE);
-        int sliceY = (int) Math.floor(pos.getY() / SLICE_SIZE);
-        int sliceZ = (int) Math.floor(pos.getZ() / SLICE_SIZE);
+        NegativeResults outputX = handleNegative(pos.getX());
+        NegativeResults outputY = handleNegative(pos.getY());
+        NegativeResults outputZ = handleNegative(pos.getZ());
+
+        int sliceX = (int) Math.floor(outputX.value / SLICE_SIZE);
+        int sliceY = (int) Math.floor(outputY.value / SLICE_SIZE);
+        int sliceZ = (int) Math.floor(outputZ.value / SLICE_SIZE);
+
+        if (outputX.wasNegative) sliceX *= -1;
+        if (outputY.wasNegative) sliceY *= -1;
+        if (outputZ.wasNegative) sliceZ *= -1;
 
         return Vector3i.from(sliceX, sliceY, sliceZ);
     }
 
     public static SlicedPosition getSlicedPositionFromSlice(Vector3d pos, Vector3i sliced) {
-        double localX = pos.getX() - (sliced.getX() * SLICE_SIZE);
-        double localY = pos.getY() - (sliced.getY() * SLICE_SIZE);
-        double localZ = pos.getZ() - (sliced.getZ() * SLICE_SIZE);
+        double sliceOffsetX = pos.getX() - sliced.getX() * SLICE_SIZE;
+        double sliceOffsetY = pos.getY() - sliced.getY() * SLICE_SIZE;
+        double sliceOffsetZ = pos.getZ() - sliced.getZ() * SLICE_SIZE;
 
-        return new SlicedPosition(localX, localY, localZ, sliced.getX(), sliced.getY(), sliced.getZ());
+        return new SlicedPosition(sliceOffsetX, sliceOffsetY, sliceOffsetZ, sliced.getX(), sliced.getY(), sliced.getZ());
     }
 
     public static SlicedPosition getSlicedPosition(Vector3d pos) {
