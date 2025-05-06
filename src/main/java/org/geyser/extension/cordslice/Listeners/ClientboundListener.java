@@ -102,7 +102,7 @@ public class ClientboundListener implements EventListener {
     }
 
     @EventHandler
-    public void onClientboundForgetLevelChunkPacket(Event event, ClientboundForgetLevelChunkPacket packet) {
+    public void onClientboundForgetLevelChunkPacket(Event event, ClientboundForgetLevelChunkPacket packet) { //i think this is broken
         Vector3d realPosition = PositionTracker.getSlice(event.getConnection(), PositionTracker.SliceType.POSITION);
         PositionSlicer.SlicedPosition slicedPosition = PositionSlicer.getSlicedPosition(realPosition);
 
